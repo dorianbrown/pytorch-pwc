@@ -1,10 +1,16 @@
 #!/usr/bin/env python
 
+import torch
 import argparse
 import cv2
 import flowiz
 import numpy as np
-from torch.utils.data import DataLoader
+
+from Network import Network
+from utils import image2tensor
+
+torch.set_grad_enabled(False)  # make sure to not compute gradients for computational performance
+torch.backends.cudnn.enabled = True  # make sure to use cudnn for computational performance
 
 
 def parse_args():
@@ -31,7 +37,7 @@ if __name__ == "__main__":
 
     while success:
         success, image = vidcap.read()
-        frames.append(image)
+        frames.append(image2tensor(image))
 
         if not success:
             break
@@ -42,9 +48,12 @@ if __name__ == "__main__":
     print("Done")
 
     vidout = cv2.VideoWriter(args.output, cv2.VideoWriter_fourcc(*'MP4'), FPS, (VID_WIDTH, VID_HEIGHT))
+    moduleNetwork = Network().cuda().eval()
+    moduleNetwork.load_state_dict(torch.load(args.model))
 
-    for i in range(len(frames)):
-        flow = do_pwc_torch(frame[i], frame[i+1])
+    for i in range(len(frames) - 1):
+        tensorOutput = moduleNetwork.estimate(frames[i], frames[i+1])
+        flow = np.array(tensorOutput.numpy().transpose(1, 2, 0), np.float32)
         flow_img = flowiz.convert_from_flow(flow)
         vidout.write(flow_img)
 
