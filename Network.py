@@ -148,7 +148,7 @@ class Network(torch.nn.Module):
 
                     tensorVolume = torch.nn.functional.leaky_relu(
                         input=correlation.FunctionCorrelation(tensorFirst=tensorFirst,
-                                                              tensorSecond=Backward(tensorInput=tensorSecond,
+                                                              tensorSecond=self.backward(tensorInput=tensorSecond,
                                                                                     tensorFlow=tensorFlow * self.dblBackward)),
                         negative_slope=0.1, inplace=False)
 
