@@ -15,9 +15,6 @@ class Network(torch.nn.Module):
         self.moduleFiv = Decoder(5)
         self.moduleSix = Decoder(6)
 
-        self.backward_tensorgrid = {}
-        self.backward_tensorpartial = {}
-
         self.moduleRefiner = Refiner()
 
     def forward(self, tensorFirst, tensorSecond):
@@ -61,37 +58,12 @@ class Network(torch.nn.Module):
 
         return tensorFlow[0, :, :, :].cpu()
 
-    def backward(self, tensorInput, tensorFlow):
-        if str(tensorFlow.size()) not in self.backward_tensorgrid:
-            tensorHorizontal = torch.linspace(-1.0, 1.0, tensorFlow.size(3)).view(1, 1, 1, tensorFlow.size(3)).expand(
-                tensorFlow.size(0), -1, tensorFlow.size(2), -1)
-            tensorVertical = torch.linspace(-1.0, 1.0, tensorFlow.size(2)).view(1, 1, tensorFlow.size(2), 1).expand(
-                tensorFlow.size(0), -1, -1, tensorFlow.size(3))
-
-            self.backward_tensorgrid[str(tensorFlow.size())] = torch.cat([tensorHorizontal, tensorVertical], 1).cuda()
-
-        if str(tensorFlow.size()) not in self.backward_tensorpartial:
-            self.backward_tensorpartial[str(tensorFlow.size())] = tensorFlow.new_ones(
-                [tensorFlow.size(0), 1, tensorFlow.size(2), tensorFlow.size(3)])
-
-        tensorFlow = torch.cat([tensorFlow[:, 0:1, :, :] / ((tensorInput.size(3) - 1.0) / 2.0),
-                                tensorFlow[:, 1:2, :, :] / ((tensorInput.size(2) - 1.0) / 2.0)], 1)
-        tensorInput = torch.cat([tensorInput, self.backward_tensorpartial[str(tensorFlow.size())]], 1)
-
-        tensorOutput = torch.nn.functional.grid_sample(input=tensorInput, grid=(
-                self.backward_tensorgrid[str(tensorFlow.size())] + tensorFlow).permute(0, 2, 3, 1), mode='bilinear',
-                                                       padding_mode='zeros')
-
-        tensorMask = tensorOutput[:, -1:, :, :]
-        tensorMask[tensorMask > 0.999] = 1.0
-        tensorMask[tensorMask < 1.0] = 0.0
-
-        return tensorOutput[:, :-1, :, :] * tensorMask
-
 
 class Decoder(torch.nn.Module):
     def __init__(self, intLevel):
         super(Decoder, self).__init__()
+        self.backward_tensorgrid = {}
+        self.backward_tensorpartial = {}
 
         intPrevious = \
             [None, None, 81 + 32 + 2 + 2, 81 + 64 + 2 + 2, 81 + 96 + 2 + 2, 81 + 128 + 2 + 2, 81, None][
@@ -180,6 +152,33 @@ class Decoder(torch.nn.Module):
             'tensorFlow': tensorFlow,
             'tensorFeat': tensorFeat
         }
+
+    def backward(self, tensorInput, tensorFlow):
+        if str(tensorFlow.size()) not in self.backward_tensorgrid:
+            tensorHorizontal = torch.linspace(-1.0, 1.0, tensorFlow.size(3)).view(1, 1, 1, tensorFlow.size(3)).expand(
+                tensorFlow.size(0), -1, tensorFlow.size(2), -1)
+            tensorVertical = torch.linspace(-1.0, 1.0, tensorFlow.size(2)).view(1, 1, tensorFlow.size(2), 1).expand(
+                tensorFlow.size(0), -1, -1, tensorFlow.size(3))
+
+            self.backward_tensorgrid[str(tensorFlow.size())] = torch.cat([tensorHorizontal, tensorVertical], 1).cuda()
+
+        if str(tensorFlow.size()) not in self.backward_tensorpartial:
+            self.backward_tensorpartial[str(tensorFlow.size())] = tensorFlow.new_ones(
+                [tensorFlow.size(0), 1, tensorFlow.size(2), tensorFlow.size(3)])
+
+        tensorFlow = torch.cat([tensorFlow[:, 0:1, :, :] / ((tensorInput.size(3) - 1.0) / 2.0),
+                                tensorFlow[:, 1:2, :, :] / ((tensorInput.size(2) - 1.0) / 2.0)], 1)
+        tensorInput = torch.cat([tensorInput, self.backward_tensorpartial[str(tensorFlow.size())]], 1)
+
+        tensorOutput = torch.nn.functional.grid_sample(input=tensorInput, grid=(
+                self.backward_tensorgrid[str(tensorFlow.size())] + tensorFlow).permute(0, 2, 3, 1), mode='bilinear',
+                                                       padding_mode='zeros')
+
+        tensorMask = tensorOutput[:, -1:, :, :]
+        tensorMask[tensorMask > 0.999] = 1.0
+        tensorMask[tensorMask < 1.0] = 0.0
+
+        return tensorOutput[:, :-1, :, :] * tensorMask
 
 
 class Extractor(torch.nn.Module):
