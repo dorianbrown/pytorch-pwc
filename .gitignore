@@ -2,6 +2,7 @@
 network-chairs-things.pytorch
 network-default.pytorch
 .idea/*
+temp/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
