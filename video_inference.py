@@ -33,17 +33,10 @@ if __name__ == "__main__":
     VID_HEIGHT = vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT)
     frames = []
     success = True
-    count = 0
 
     while success:
         success, image = vidcap.read()
         frames.append(image2tensor(image))
-
-        if not success:
-            break
-        print(count)
-        count += 1
-        cv2.imwrite(f"temp/frame{count}.jpg", image)
 
     print("Done")
 
