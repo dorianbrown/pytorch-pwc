@@ -28,19 +28,20 @@ if __name__ == "__main__":
     args = parse_args()
 
     vidcap = cv2.VideoCapture(args.input)
-    FPS = vidcap.get(cv2.CAP_PROP_FPS)
-    VID_WIDTH = vidcap.get(cv2.CAP_PROP_FRAME_WIDTH)
-    VID_HEIGHT = vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    FPS = int(vidcap.get(cv2.CAP_PROP_FPS))
+    VID_WIDTH = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    VID_HEIGHT = int(vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     frames = []
     success = True
 
     while success:
         success, image = vidcap.read()
-        frames.append(image2tensor(image))
+        if success:
+            frames.append(image2tensor(image))
 
-    print("Done")
+    print("Converted images to frames")
 
-    vidout = cv2.VideoWriter(args.output, cv2.VideoWriter_fourcc(*'MP4'), FPS, (VID_WIDTH, VID_HEIGHT))
+    vidout = cv2.VideoWriter(args.output, cv2.VideoWriter_fourcc(*'mp4v'), FPS, (VID_WIDTH, VID_HEIGHT))
     moduleNetwork = Network().cuda().eval()
     moduleNetwork.load_state_dict(torch.load(args.model))
 
@@ -51,4 +52,4 @@ if __name__ == "__main__":
         vidout.write(flow_img)
 
     vidout.release()
-    print(f"Done! \nFlowviz written to {args.out}")
+    print(f"Done! \nFlowviz written to {args.output}")
