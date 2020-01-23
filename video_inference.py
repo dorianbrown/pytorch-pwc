@@ -36,20 +36,22 @@ if __name__ == "__main__":
 
     while success:
         success, image = vidcap.read()
-        if success:
-            frames.append(image2tensor(image))
 
-    print("Converted images to frames")
+        if success and 'frame2' in locals():  # Check if frame2 var exists
+            frame1 = frame2
+            frame2 = image2tensor(image)
+        else:
+            frame2 = image2tensor(image)
+            continue
 
-    vidout = cv2.VideoWriter(args.output, cv2.VideoWriter_fourcc(*'mp4v'), FPS, (VID_WIDTH, VID_HEIGHT))
-    moduleNetwork = Network().cuda().eval()
-    moduleNetwork.load_state_dict(torch.load(args.model))
+        vidout = cv2.VideoWriter(args.output, cv2.VideoWriter_fourcc(*'mp4v'), FPS, (VID_WIDTH, VID_HEIGHT))
+        moduleNetwork = Network().cuda().eval()
+        moduleNetwork.load_state_dict(torch.load(args.model))
 
-    for i in range(len(frames) - 1):
-        tensorOutput = moduleNetwork.estimate(frames[i], frames[i+1])
+        tensorOutput = moduleNetwork.estimate(frame1, frame2)
         flow = np.array(tensorOutput.numpy().transpose(1, 2, 0), np.float32)
         flow_img = flowiz.convert_from_flow(flow)
         vidout.write(flow_img)
 
-    vidout.release()
-    print(f"Done! \nFlowviz written to {args.output}")
+        vidout.release()
+        print(f"Done! \nFlowviz written to {args.output}")
