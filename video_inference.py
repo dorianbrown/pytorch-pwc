@@ -5,6 +5,7 @@ import argparse
 import cv2
 import flowiz
 import numpy as np
+from tqdm import tqdm
 
 from Network import Network
 from utils import image2tensor
@@ -31,10 +32,11 @@ if __name__ == "__main__":
     FPS = int(vidcap.get(cv2.CAP_PROP_FPS))
     VID_WIDTH = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH))
     VID_HEIGHT = int(vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    FRAMES = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT))
     frames = []
     success = True
 
-    while success:
+    for _ in tqdm(range(FRAMES)):
         success, image = vidcap.read()
 
         if success and 'frame2' in locals():  # Check if frame2 var exists
@@ -54,4 +56,4 @@ if __name__ == "__main__":
         vidout.write(flow_img)
 
         vidout.release()
-        print(f"Done! \nFlowviz written to {args.output}")
+    print(f"Done! \nFlowviz written to {args.output}")
