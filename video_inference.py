@@ -32,6 +32,7 @@ if __name__ == "__main__":
     FPS = int(vidcap.get(cv2.CAP_PROP_FPS))
     VID_WIDTH = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH))
     VID_HEIGHT = int(vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    vidout = cv2.VideoWriter(args.output, cv2.VideoWriter_fourcc(*'mp4v'), FPS, (VID_WIDTH, VID_HEIGHT))
     FRAMES = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT))
     success = True
 
@@ -45,7 +46,6 @@ if __name__ == "__main__":
             frame2 = image2tensor(image)
             continue
 
-        vidout = cv2.VideoWriter(args.output, cv2.VideoWriter_fourcc(*'mp4v'), FPS, (VID_WIDTH, VID_HEIGHT))
         moduleNetwork = Network().cuda().eval()
         moduleNetwork.load_state_dict(torch.load(args.model))
 
