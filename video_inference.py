@@ -33,13 +33,12 @@ if __name__ == "__main__":
     VID_WIDTH = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH))
     VID_HEIGHT = int(vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     FRAMES = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT))
-    frames = []
     success = True
 
     for _ in tqdm(range(FRAMES)):
         success, image = vidcap.read()
 
-        if success and 'frame2' in locals():  # Check if frame2 var exists
+        if success and 'frame2' in locals():  # We want to skip the first frame
             frame1 = frame2
             frame2 = image2tensor(image)
         else:
@@ -55,5 +54,5 @@ if __name__ == "__main__":
         flow_img = flowiz.convert_from_flow(flow)
         vidout.write(flow_img)
 
-        vidout.release()
+    vidout.release()
     print(f"Done! \nFlowviz written to {args.output}")
